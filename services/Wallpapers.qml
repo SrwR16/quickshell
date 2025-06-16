@@ -9,15 +9,18 @@ import QtQuick
 Singleton {
     id: root
 
-    readonly property string currentNamePath: `${Paths.state}/wallpaper/path.txt`.slice(7)
-    readonly property string path: `${Paths.pictures}/Wallpapers`.slice(7)
+    readonly property string path: "/home/sarw/Pictures/Wallpapers"
     readonly property list<string> extensions: ["jpg", "jpeg", "png", "webp", "tif", "tiff"]
+
+    Component.onCompleted: {
+        console.log("Wallpaper path:", path);
+    }
 
     readonly property list<Wallpaper> list: wallpapers.instances
     property bool showPreview: false
     readonly property string current: showPreview ? previewPath : actualCurrent
     property string previewPath
-    property string actualCurrent
+    property string actualCurrent: list.length > 0 ? list[0].path : ""
 
     readonly property list<var> preppedWalls: list.map(w => ({
                 name: Fuzzy.prepare(w.name),
@@ -68,20 +71,15 @@ Singleton {
         }
     }
 
-    FileView {
-        path: root.currentNamePath
-        watchChanges: true
-        onFileChanged: reload()
-        onLoaded: root.actualCurrent = text().trim()
-    }
-
     Process {
         id: getPreviewColoursProc
 
-        command: ["caelestia", "wallpaper", "-p", root.previewPath]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                Colours.load(text, true);
+        // For now, skip color extraction since caelestia is not available
+        // Just show preview without color updates
+        onRunningChanged: {
+            if (running) {
+                // Simulate the color loading process
+                running = false;
                 Colours.showPreview = true;
             }
         }
@@ -92,14 +90,19 @@ Singleton {
 
         property string path
 
-        command: ["caelestia", "wallpaper", "-f", path]
+        command: ["swww", "img", path]
     }
 
     Process {
         running: true
         command: ["find", root.path, "-type", "d", "-path", '*/.*', "-prune", "-o", "-not", "-name", '.*', "-type", "f", "-print"]
         stdout: StdioCollector {
-            onStreamFinished: wallpapers.model = text.trim().split("\n").filter(w => root.extensions.includes(w.slice(w.lastIndexOf(".") + 1))).sort()
+            onStreamFinished: {
+                console.log("Found wallpaper files:", text.trim());
+                const files = text.trim().split("\n").filter(w => root.extensions.includes(w.slice(w.lastIndexOf(".") + 1)));
+                console.log("Filtered wallpaper files:", files);
+                wallpapers.model = files.sort();
+            }
         }
     }
 

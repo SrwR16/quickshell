@@ -18,6 +18,7 @@ MouseArea {
     property point dragStart
     property bool dashboardShortcutActive
     property bool osdShortcutActive
+    property bool launcherShortcutActive
 
     function withinPanelHeight(panel: Item, x: real, y: real): bool {
         const panelY = BorderConfig.thickness + panel.y;
@@ -33,6 +34,12 @@ MouseArea {
         return y < BorderConfig.thickness + panel.y + panel.height && x >= panelX - BorderConfig.rounding && x <= panelX + panel.width + BorderConfig.rounding;
     }
 
+    function inBottomPanel(panel: Item, x: real, y: real): bool {
+        const panelX = bar.implicitWidth + panel.x;
+        const panelY = BorderConfig.thickness + panel.y;
+        return y > panelY - BorderConfig.rounding && x >= panelX - BorderConfig.rounding && x <= panelX + panel.width + BorderConfig.rounding;
+    }
+
     anchors.fill: parent
     hoverEnabled: true
 
@@ -46,6 +53,9 @@ MouseArea {
             }
             if (!dashboardShortcutActive) {
                 visibilities.dashboard = false;
+            }
+            if (!launcherShortcutActive) {
+                visibilities.launcher = false;
             }
             popouts.hasCurrent = false;
         }
@@ -85,6 +95,17 @@ MouseArea {
             dashboardShortcutActive = false;
         }
 
+        // Show launcher on hover
+        const showLauncher = inBottomPanel(panels.launcher, x, y);
+
+        // Always update visibility based on hover if not in shortcut mode
+        if (!launcherShortcutActive) {
+            visibilities.launcher = showLauncher;
+        } else if (showLauncher) {
+            // If hovering over launcher area while in shortcut mode, transition to hover control
+            launcherShortcutActive = false;
+        }
+
         // Show popouts on hover
         const popout = panels.popouts;
         if (x < bar.implicitWidth + popout.width) {
@@ -101,26 +122,6 @@ MouseArea {
     // Monitor individual visibility changes
     Connections {
         target: root.visibilities
-
-        function onLauncherChanged() {
-            // If launcher is hidden, clear shortcut flags for dashboard and OSD
-            if (!root.visibilities.launcher) {
-                root.dashboardShortcutActive = false;
-                root.osdShortcutActive = false;
-
-                // Also hide dashboard and OSD if they're not being hovered
-                const inDashboardArea = root.inTopPanel(root.panels.dashboard, root.mouseX, root.mouseY);
-                const inOsdArea = root.inRightPanel(root.panels.osd, root.mouseX, root.mouseY);
-
-                if (!inDashboardArea) {
-                    root.visibilities.dashboard = false;
-                }
-                if (!inOsdArea) {
-                    root.visibilities.osd = false;
-                    root.osdHovered = false;
-                }
-            }
-        }
 
         function onDashboardChanged() {
             if (root.visibilities.dashboard) {
@@ -145,6 +146,35 @@ MouseArea {
             } else {
                 // OSD hidden, clear shortcut flag
                 root.osdShortcutActive = false;
+            }
+        }
+
+        function onLauncherChanged() {
+            if (root.visibilities.launcher) {
+                // Launcher became visible, immediately check if this should be shortcut mode
+                const inLauncherArea = root.inBottomPanel(root.panels.launcher, root.mouseX, root.mouseY);
+                if (!inLauncherArea) {
+                    root.launcherShortcutActive = true;
+                }
+            } else {
+                // Launcher hidden, clear shortcut flag
+                root.launcherShortcutActive = false;
+
+                // Also clear other shortcut flags when launcher is hidden
+                root.dashboardShortcutActive = false;
+                root.osdShortcutActive = false;
+
+                // Also hide dashboard and OSD if they're not being hovered
+                const inDashboardArea = root.inTopPanel(root.panels.dashboard, root.mouseX, root.mouseY);
+                const inOsdArea = root.inRightPanel(root.panels.osd, root.mouseX, root.mouseY);
+
+                if (!inDashboardArea) {
+                    root.visibilities.dashboard = false;
+                }
+                if (!inOsdArea) {
+                    root.visibilities.osd = false;
+                    root.osdHovered = false;
+                }
             }
         }
     }
