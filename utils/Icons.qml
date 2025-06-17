@@ -170,7 +170,6 @@ Singleton {
         if (categories) {
             for (const [key, value] of Object.entries(categoryIcons)) {
                 if (categories.includes(key)) {
-                    console.log(`Icon found by category for ${name}: ${value}`);
                     return value;
                 }
             }

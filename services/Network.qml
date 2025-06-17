@@ -197,7 +197,6 @@ Singleton {
             onRead: function(data) {
                 const wasEnabled = root.enabled;
                 const newEnabled = data.trim() === "enabled";
-                console.log("WiFi status check: raw='" + data.trim() + "' enabled=" + newEnabled);
 
                 if (root.enabled !== newEnabled) {
                     root.enabled = newEnabled;
