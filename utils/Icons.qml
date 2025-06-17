@@ -119,10 +119,10 @@ Singleton {
             Player: "music_note",
             Recorder: "mic",
             Game: "sports_esports",
-            FileTools: "files",
-            FileManager: "files",
-            Filesystem: "files",
-            FileTransfer: "files",
+            FileTools: "folder",
+            FileManager: "folder",
+            Filesystem: "folder",
+            FileTransfer: "folder",
             Settings: "settings",
             DesktopSettings: "settings",
             HardwareSettings: "settings",
@@ -161,12 +161,54 @@ Singleton {
     }
 
     function getAppCategoryIcon(name: string, fallback: string): string {
-        const categories = getDesktopEntry(name)?.categories;
+        if (!name) return fallback;
 
-        if (categories)
-            for (const [key, value] of Object.entries(categoryIcons))
-                if (categories.includes(key))
+        const desktopEntry = getDesktopEntry(name);
+        const categories = desktopEntry?.categories;
+
+        // First try to match by categories
+        if (categories) {
+            for (const [key, value] of Object.entries(categoryIcons)) {
+                if (categories.includes(key)) {
+                    console.log(`Icon found by category for ${name}: ${value}`);
                     return value;
+                }
+            }
+        }
+
+        // If no category match, try some common app name patterns
+        const lowerName = name.toLowerCase();
+
+        // Common app patterns
+        if (lowerName.includes('file') || lowerName.includes('nautilus') || lowerName.includes('thunar') ||
+            lowerName === 'files' || lowerName === 'org.gnome.nautilus' || lowerName === 'nemo' ||
+            lowerName === 'org.gnome.files' || lowerName === 'pcmanfm') {
+            console.log(`Icon found by pattern for ${name}: folder`);
+            return "folder";
+        }
+        if (lowerName.includes('browser') || lowerName.includes('firefox') || lowerName.includes('chrome')) {
+            return "web";
+        }
+        if (lowerName.includes('terminal') || lowerName.includes('konsole') || lowerName.includes('alacritty')) {
+            return "terminal";
+        }
+        if (lowerName.includes('code') || lowerName.includes('editor') || lowerName.includes('vim')) {
+            return "code";
+        }
+        if (lowerName.includes('music') || lowerName.includes('audio') || lowerName.includes('spotify')) {
+            return "music_note";
+        }
+        if (lowerName.includes('video') || lowerName.includes('vlc') || lowerName.includes('player')) {
+            return "play_arrow";
+        }
+        if (lowerName.includes('game')) {
+            return "sports_esports";
+        }
+        if (lowerName.includes('settings') || lowerName.includes('control')) {
+            return "settings";
+        }
+
+        console.log(`No icon match found for ${name}, using fallback: ${fallback}`);
         return fallback;
     }
 

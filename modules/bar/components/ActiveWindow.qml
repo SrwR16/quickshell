@@ -60,7 +60,12 @@ Item {
             id: icon
 
             animate: true
-            text: Icons.getAppCategoryIcon(Niri.activeClient?.app_id, "desktop_windows")
+            text: {
+                const appId = Niri.activeClient?.app_id;
+                const iconResult = Icons.getAppCategoryIcon(appId, "apps");
+                console.log(`ActiveWindow - App ID: ${appId}, Icon: ${iconResult}`);
+                return iconResult;
+            }
             color: root.colour
 
             anchors.horizontalCenter: parent.horizontalCenter
